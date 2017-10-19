@@ -154,6 +154,7 @@ object VCGen {
       ("exists" ~> rep(pvar) <~ ",") ~ assnatom ^^ {
         case list ~ a => { AssnExists(list, a) }
       }
+    
     /* Parsing for Program. */
     def prog   : Parser[Program] =
       (("program" ~> pvar) ~ rep("pre" ~> assnexp) 
@@ -167,6 +168,6 @@ object VCGen {
     import ImpParser._;
     val result = parseAll(prog, reader)
     Util.printAst(result)
-    println(result)
+    // println(result)
   }
 }
