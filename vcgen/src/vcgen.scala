@@ -29,7 +29,7 @@ object VCGen {
   case class BNot(b: BoolExp) extends BoolExp
   case class BDisj(left: BoolExp, right: BoolExp) extends BoolExp
   case class BConj(left: BoolExp, right: BoolExp) extends BoolExp
-  case class BParens(b: BoolExp) extends BoolExp
+  case class BParens(b: BoolExp) extends BoolExp // Not used?
 
 
   /* Statements and blocks. */
@@ -40,11 +40,21 @@ object VCGen {
   case class Write(x: String, ind: ArithExp, value: ArithExp) extends Statement
   case class ParAssign(x1: String, x2: String, value1: ArithExp, value2: ArithExp) extends Statement
   case class If(cond: BoolExp, th: Block, el: Block) extends Statement
-  case class While(cond: BoolExp, body: Block) extends Statement
+  case class While(cond: BoolExp, inv: List[Assertion], body: Block) extends Statement
+
+  trait Assertion
+  case class AssnCmp(c: Comparison) extends Assertion
+  case class AssnNot(a: Assertion) extends Assertion
+  case class AssnDisj(left: Assertion, right: Assertion) extends Assertion
+  case class AssnConj(left: Assertion, right: Assertion) extends Assertion
+  case class AssnImpl(left: Assertion, right: Assertion) extends Assertion
+  case class AssnForall(x: List[String], assn: Assertion) extends Assertion
+  case class AssnExists(x: List[String], assn: Assertion) extends Assertion
+  case class AssnParens(a: Assertion) extends Assertion
 
 
   /* Complete programs. */
-  type Program = Product2[String, Block]
+  type Program = Product4[String, List[Assertion], List[Assertion], Block]
 
 
   object ImpParser extends RegexParsers {
@@ -83,7 +93,9 @@ object VCGen {
 
     /* Parsing for BoolExp. */
     def batom : Parser[BoolExp] =
-      "(" ~> bexp <~ ")" | comp ^^ { BCmp(_) } | "!" ~> batom ^^ { BNot(_) }
+      "(" ~> bexp <~ ")" |
+      comp ^^ { BCmp(_) } |
+      "!" ~> batom ^^ { BNot(_) }
     def bconj : Parser[BoolExp] =
       batom ~ rep("&&" ~> batom) ^^ {
         case left ~ list => (left /: list) { BConj(_, _) }
@@ -112,20 +124,49 @@ object VCGen {
       ("if" ~> bexp <~ "then") ~ (block <~ "end") ^^ {
         case c ~ t => If(c, t, Nil)
       } |
-      ("while" ~> (bexp /* ~ rep("inv" ~ assn) */) <~ "do") ~ (block <~ "end") ^^ {
-        case c ~ b => While(c, b)
+      ("while" ~> (bexp ~ rep("inv" ~> assnexp)) <~ "do") ~ (block <~ "end") ^^ {
+        case c ~ i ~ b => While(c, i, b)
       }
 
+    // My parsers:
+    def assnatom : Parser[Assertion] =
+      "(" ~> assnexp <~ ")" | comp ^^ { AssnCmp(_) } |
+      "!" ~> assnatom ^^ { AssnNot(_) }
+    def assnconj : Parser[Assertion] =
+      assnatom ~ rep("&&" ~> assnatom) ^^ {
+        case left ~ list => (left /: list) { AssnConj(_, _) }
+      }
+    def assndisj : Parser[Assertion] =
+      assnconj ~ rep("||" ~> assnconj) ^^ {
+        case left ~ list => (left /: list) { AssnDisj(_, _) }
+      }
+    // Beware - this might imply backwards depending on how "/:" works
+    def assnimpl : Parser[Assertion] =
+      assndisj ~ rep("==>" ~> assndisj) ^^ {
+        case left ~ list => (left /: list) { AssnImpl(_, _) }
+      }
+    def assnexp : Parser[Assertion] = assndisj
+    def assnforall : Parser[Assertion] =
+      ("forall" ~> rep(pvar) <~ ",") ~ assnatom ^^ {
+        case list ~ a => { AssnForall(list, a) }
+      }
+    def assnexists : Parser[Assertion] =
+      ("exists" ~> rep(pvar) <~ ",") ~ assnatom ^^ {
+        case list ~ a => { AssnExists(list, a) }
+      }
     /* Parsing for Program. */
     def prog   : Parser[Program] =
-      ("program" ~> pvar <~ "is") ~ (block <~ "end") ^^ {
-        case n ~ b => (n, b)
+      (("program" ~> pvar) ~ rep("pre" ~> assnexp) 
+          ~ (rep("post" ~> assnexp) <~ "is")) ~ (block <~ "end") ^^ {
+        case n ~ pre ~ post ~ b => (n, pre, post, b)
       }
   }
 
   def main(args: Array[String]): Unit = {
     val reader = new FileReader(args(0))
     import ImpParser._;
-    println(parseAll(prog, reader))
+    val result = parseAll(prog, reader)
+    Util.printAst(result)
+    println(result)
   }
 }

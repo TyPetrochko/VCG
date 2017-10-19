@@ -1,5 +1,5 @@
 	The IMP Programming Language
-	& its assertion language
+  
 
 
 Here follows the description of the minimal programming language
