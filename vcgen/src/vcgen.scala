@@ -166,8 +166,6 @@ object VCGen {
   def main(args: Array[String]): Unit = {
     val reader = new FileReader(args(0))
     import ImpParser._;
-    val result = parseAll(prog, reader)
-    Util.printAst(result)
-    // println(result)
+    Util.printAst(parseAll(prog, reader))
   }
 }
