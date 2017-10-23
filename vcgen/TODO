@@ -1,0 +1,11 @@
+TODO:
+
+(1) Make wp.scala
+(2) Make a function wp(GC, VCGen.Assertion) : VCGen.Assertion
+  - make a trait Condition that's either Assertion or WriteClause(x, a, i, v)
+  - make a function wp(GC, Condition) for heavy-lifting
+      - make a new getFreshVar
+      - make a new replace(VCGen.Assertion)
+      - make a assumptionToCondition(GCAssume(a)) function since that's beefy
+      - make a case for assume ^, havoc, seq, branch, and assertion
+(3) Figure out when to use \forall and when to use \exists
