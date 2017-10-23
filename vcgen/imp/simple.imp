@@ -1,0 +1,7 @@
+program simple
+  post x = 1
+is
+  x := 0;
+  x := x+1;
+end
+

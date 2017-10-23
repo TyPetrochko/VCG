@@ -7,8 +7,6 @@ object GuardedCommands {
   
   trait GCAssumption
   case class GCBoolExp(b: VCGen.BoolExp) extends GCAssumption
-  case class GCCheckWrite(x: String, arr: String, ind: VCGen.ArithExp,
-    v: VCGen.ArithExp) extends GCAssumption
   case class GCInvariant(i: VCGen.Assertion) extends GCAssumption
 
   trait GC
@@ -68,6 +66,8 @@ object GuardedCommands {
       case VCGen.Var(s) => VCGen.Var(if (s == x) r else s)
       case VCGen.Read(s, ind) => 
         VCGen.Read(if (s == x) r else s, replace(ind, r, x))
+      case VCGen.ArrWrite(s, ind, v) => 
+        VCGen.ArrWrite(if (s == x) r else s, replace(ind, r, x), replace(v, r, x))
       case VCGen.Add(le, ri) => VCGen.Add(replace(le, r, x), replace(ri, r, x))
       case VCGen.Sub(le, ri) => VCGen.Sub(replace(le, r, x), replace(ri, r, x))
       case VCGen.Mul(le, ri) => VCGen.Mul(replace(le, r, x), replace(ri, r, x))
@@ -101,7 +101,7 @@ object GuardedCommands {
         join(
             gcAssumeEquals(tmp, VCGen.Var(x)),
             GCHavoc(x),
-            GCAssume(GCCheckWrite(x, tmp, replace(ind, tmp, x), replace(v, tmp, x)))
+            gcAssumeEquals(x, VCGen.ArrWrite(tmp, replace(ind, tmp, x), replace(v, tmp, x)))
           )
       }
       case VCGen.ParAssign(x1, x2, v1, v2) => {

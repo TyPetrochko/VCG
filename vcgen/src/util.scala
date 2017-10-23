@@ -19,8 +19,6 @@ object Util {
   def printGC(tree: GuardedCommands.GC) : String = {
     tree match {
       case GuardedCommands.GCAssume(GuardedCommands.GCBoolExp(b)) => "assume "+b+";"
-      case GuardedCommands.GCAssume(GuardedCommands.GCCheckWrite(x, arr, ind, v)) =>
-        ("assume "+x+" = "+"write("+arr+", "+ind+", "+v+");")
       case GuardedCommands.GCAssume(GuardedCommands.GCInvariant(i)) => "assume "+i+";"
       case GuardedCommands.GCHavoc(x) => "havoc "+x+";"
       case GuardedCommands.GCSeq(c1, c2) => printGC(c1)+"\n"+printGC(c2)

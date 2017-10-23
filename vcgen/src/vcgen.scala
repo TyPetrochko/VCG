@@ -17,6 +17,9 @@ object VCGen {
   case class Mod(left: ArithExp, right: ArithExp) extends ArithExp
   case class Parens(a: ArithExp) extends ArithExp
 
+  /* This is ONLY for GC/WP, not AST */
+  case class ArrWrite(name: String, ind: ArithExp, value: ArithExp) extends ArithExp
+
 
   /* Comparisons of arithmetic expressions. */
   type Comparison = Product3[ArithExp, String, ArithExp]
@@ -166,8 +169,12 @@ object VCGen {
     val reader = new FileReader(args(0))
     import ImpParser._;
     val result = parseAll(prog, reader)
-    // Util.printAst(result)
-    println(Util.printGC(GuardedCommands.guard(result.get._4)))
-    // println(Util.prettyPrint(Var(null)))
+    val gc = GuardedCommands.guard(result.get._4)
+    println("** Guarded Commands **")
+    println(Util.printGC(gc))
+    println("")
+    val wp = WeakestPrecondition.wp(gc, GuardedCommands.getTrueyAssn)
+    println("** Weakest Precondition (with post condition: 1=1) **")
+    println(Util.prettyPrint(wp))
   }
 }

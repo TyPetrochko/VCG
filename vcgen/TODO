@@ -1,7 +1,25 @@
 TODO:
 
-(1) Make wp.scala
-(2) Make a function wp(GC, VCGen.Assertion) : VCGen.Assertion
+(0) Install z3
+(1) Get all array vars used in an Assertion
+(2) Get all non-array vars used in an Assertion
+(3) Remove all Forall(...) and replace Exists(...) with negation
+(4) Print out z3-string
+
+
+****
+
+(x) Finish WeakestPrecondition.boolExpToAssertion conversion (easy)
+(x) Finish WeakestPrecondition.wp
+  - For GCAssume(GCBoolExp(b)) do implies(boolExpToAssertion(b), a)
+  - For GCInvariant(i) do implies(i, a)
+  - Rest should be fairly easy...
+
+**** 
+
+
+(x) Make wp.scala
+(x) Make a function wp(GC, VCGen.Assertion) : VCGen.Assertion
   - make a trait Condition that's either Assertion or WriteClause(x, a, i, v)
   - make a function wp(GC, Condition) for heavy-lifting
       - make a new getFreshVar
@@ -9,3 +27,11 @@ TODO:
       - make a assumptionToCondition(GCAssume(a)) function since that's beefy
       - make a case for assume ^, havoc, seq, branch, and assertion
 (3) Figure out when to use \forall and when to use \exists
+
+****
+
+Thoughts:
+ - Might need to differentiate Var(x) from Arr(x)
+ - How is it language specifies if-then or if-then-else but we only handle
+   if-then-else?
+
