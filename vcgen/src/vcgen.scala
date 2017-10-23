@@ -21,7 +21,6 @@ object VCGen {
   /* Comparisons of arithmetic expressions. */
   type Comparison = Product3[ArithExp, String, ArithExp]
 
-
   /* Boolean expressions. */
   trait BoolExp
 
@@ -45,8 +44,8 @@ object VCGen {
   trait Assertion
   case class AssnCmp(c: Comparison) extends Assertion
   case class AssnNot(a: Assertion) extends Assertion
-  case class AssnDisj(left: Assertion, right: Assertion) extends Assertion
-  case class AssnConj(left: Assertion, right: Assertion) extends Assertion
+  case class AssnDisj(left: Assertion, right: Assertion) extends Assertion // OR
+  case class AssnConj(left: Assertion, right: Assertion) extends Assertion // AND
   case class AssnImpl(left: Assertion, right: Assertion) extends Assertion
   case class AssnForall(x: List[String], assn: Assertion) extends Assertion
   case class AssnExists(x: List[String], assn: Assertion) extends Assertion
@@ -166,6 +165,9 @@ object VCGen {
   def main(args: Array[String]): Unit = {
     val reader = new FileReader(args(0))
     import ImpParser._;
-    Util.printAst(parseAll(prog, reader))
+    val result = parseAll(prog, reader)
+    // Util.printAst(result)
+    println(Util.printGC(GuardedCommands.guard(result.get._4)))
+    // println(Util.prettyPrint(Var(null)))
   }
 }
