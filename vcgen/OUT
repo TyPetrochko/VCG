@@ -1,0 +1,204 @@
+[ -e classes ] || mkdir classes
+scalac -d classes src/vcgen.scala src/gc.scala  src/util.scala src/wp.scala src/smt.scala
+scala -cp classes VCGen imp/fib.imp
+** Guarded Commands **
+assume BCmp((ArrayVar(#1),=,ArrayVar(fib)));
+havoc fib;
+assume BCmp((ArrayVar(fib),=,ArrWrite(#1,Num(1),Num(1))));
+assume BCmp((ArrayVar(#2),=,ArrayVar(fib)));
+havoc fib;
+assume BCmp((ArrayVar(fib),=,ArrWrite(#2,Num(2),Num(1))));
+assume BCmp((Var(#3),=,Var(i)));
+havoc i;
+assume BCmp((Var(i),=,Num(3)));
+assert AssnCmp((Num(1),=,Num(1)));
+havoc i;
+havoc fib;
+assume AssnCmp((Num(1),=,Num(1)));
+(assume BCmp((Var(i),<,Var(N)));
+assume BCmp((ArrayVar(#4),=,ArrayVar(fib)));
+havoc fib;
+assume BCmp((ArrayVar(fib),=,ArrWrite(#4,Var(i),Add(Read(#4,Sub(Var(i),Num(1))),Read(#4,Sub(Var(i),Num(2)))))));
+assume BCmp((Var(#5),=,Var(i)));
+havoc i;
+assume BCmp((Var(i),=,Add(Var(#5),Num(1))));
+assert AssnCmp((Num(1),=,Num(1)));
+assume BCmp((Num(0),=,Num(1)));)[]
+(assume BNot(BCmp((Var(i),<,Var(N))));)
+
+** Weakest Precondition (with post condition: 1=1) **
+AssnImpl(
+  AssnCmp(Tuple3(
+    ArrayVar("#1"),
+    "=",
+    ArrayVar("fib")
+  )),
+  AssnImpl(
+    AssnCmp(Tuple3(
+      Var("$7"),
+      "=",
+      ArrWrite(
+        "#1",
+        Num(1),
+        Num(1)
+      )
+    )),
+    AssnImpl(
+      AssnCmp(Tuple3(
+        Var("#2"),
+        "=",
+        Var("$7")
+      )),
+      AssnImpl(
+        AssnCmp(Tuple3(
+          Var("$6"),
+          "=",
+          ArrWrite(
+            "#2",
+            Num(2),
+            Num(1)
+          )
+        )),
+        AssnImpl(
+          AssnCmp(Tuple3(
+            Var("#3"),
+            "=",
+            Var("i")
+          )),
+          AssnImpl(
+            AssnCmp(Tuple3(
+              Var("$5"),
+              "=",
+              Num(3)
+            )),
+            AssnConj(
+              AssnCmp(Tuple3(
+                Num(1),
+                "=",
+                Num(1)
+              )),
+              AssnImpl(
+                AssnCmp(Tuple3(
+                  Num(1),
+                  "=",
+                  Num(1)
+                )),
+                AssnConj(
+                  AssnImpl(
+                    AssnCmp(Tuple3(
+                      Var("$4"),
+                      "<",
+                      Var("N")
+                    )),
+                    AssnImpl(
+                      AssnCmp(Tuple3(
+                        Var("#4"),
+                        "=",
+                        Var("$3")
+                      )),
+                      AssnImpl(
+                        AssnCmp(Tuple3(
+                          Var("$2"),
+                          "=",
+                          ArrWrite(
+                            "#4",
+                            Var("$4"),
+                            Add(
+                              Read(
+                                "#4",
+                                Sub(
+                                  Var("$4"),
+                                  Num(1)
+                                )
+                              ),
+                              Read(
+                                "#4",
+                                Sub(
+                                  Var("$4"),
+                                  Num(2)
+                                )
+                              )
+                            )
+                          )
+                        )),
+                        AssnImpl(
+                          AssnCmp(Tuple3(
+                            Var("#5"),
+                            "=",
+                            Var("$4")
+                          )),
+                          AssnImpl(
+                            AssnCmp(Tuple3(
+                              Var("$1"),
+                              "=",
+                              Add(
+                                Var("#5"),
+                                Num(1)
+                              )
+                            )),
+                            AssnConj(
+                              AssnCmp(Tuple3(
+                                Num(1),
+                                "=",
+                                Num(1)
+                              )),
+                              AssnImpl(
+                                AssnCmp(Tuple3(
+                                  Num(0),
+                                  "=",
+                                  Num(1)
+                                )),
+                                AssnCmp(Tuple3(
+                                  Num(1),
+                                  "=",
+                                  Num(1)
+                                ))
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  AssnImpl(
+                    AssnNot(AssnCmp(Tuple3(
+                      Var("$4"),
+                      "<",
+                      Var("N")
+                    ))),
+                    AssnCmp(Tuple3(
+                      Num(1),
+                      "=",
+                      Num(1)
+                    ))
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+** Z3 String **
+(declare-const $4 Int)
+(declare-const #4 Int)
+(declare-const N Int)
+(declare-const #3 Int)
+(declare-const $5 Int)
+(declare-const #5 Int)
+(declare-const i Int)
+(declare-const $6 Int)
+(declare-const $3 Int)
+(declare-const #2 Int)
+(declare-const $7 Int)
+(declare-const $2 Int)
+(declare-const $1 Int)
+(declare-const #1 (Array Int Int))
+(declare-const fib (Array Int Int))
+(declare-const #2 (Array Int Int))
+(declare-const #4 (Array Int Int))
+(assert (not (implies (= #1 fib) (implies (= $7 (store #1 1 1)) (implies (= #2 $7) (implies (= $6 (store #2 2 1)) (implies (= #3 i) (implies (= $5 3) (and (= 1 1) (implies (= 1 1) (and (implies (< $4 N) (implies (= #4 $3) (implies (= $2 (store #4 $4 (+ (select #4 (- $4 1)) (select #4 (- $4 2))))) (implies (= #5 $4) (implies (= $1 (+ #5 1)) (and (= 1 1) (implies (= 0 1) (= 1 1)))))))) (implies (not (< $4 N)) (= 1 1)))))))))))))
+(check-sat)

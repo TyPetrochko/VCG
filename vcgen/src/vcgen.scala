@@ -17,8 +17,9 @@ object VCGen {
   case class Mod(left: ArithExp, right: ArithExp) extends ArithExp
   case class Parens(a: ArithExp) extends ArithExp
 
-  /* This is ONLY for GC/WP, not AST */
+  /* These are ONLY for GC/WP/SMT, not AST */
   case class ArrWrite(name: String, ind: ArithExp, value: ArithExp) extends ArithExp
+  case class ArrayVar(name: String) extends ArithExp
 
 
   /* Comparisons of arithmetic expressions. */
@@ -156,7 +157,6 @@ object VCGen {
       ("exists" ~> rep(pvar) <~ ",") ~ assnatom ^^ {
         case list ~ a => { AssnExists(list, a) }
       }
-    
     /* Parsing for Program. */
     def prog   : Parser[Program] =
       (("program" ~> pvar) ~ rep("pre" ~> assnexp) 
@@ -165,16 +165,32 @@ object VCGen {
       }
   }
 
+  def normalizeInvariants(invs : List[Assertion]) : Assertion = {
+    invs match {
+      case List() => AssnCmp((Num(1), "=", Num(1))) // True
+      case List(i) => i // Single invariant
+      case _ => invs.reduceLeft((i1, i2) => AssnConj(i1, i2))
+    }
+  }
+
   def main(args: Array[String]): Unit = {
     val reader = new FileReader(args(0))
     import ImpParser._;
+    println("** AST: **")
     val result = parseAll(prog, reader)
+    println(Util.prettyPrint(result))
     val gc = GuardedCommands.guard(result.get._4)
     println("** Guarded Commands **")
     println(Util.printGC(gc))
     println("")
-    val wp = WeakestPrecondition.wp(gc, GuardedCommands.getTrueyAssn)
+    // Start with program precondition as WP
+    val wp = WeakestPrecondition.wp(gc, normalizeInvariants(result.get._2))
     println("** Weakest Precondition (with post condition: 1=1) **")
     println(Util.prettyPrint(wp))
+    println("")
+    println("** Z3 String **")
+    // WP should imply postcondition
+    val z3str = Smt.getSmtString(AssnImpl(wp, normalizeInvariants(result.get._3)))
+    println(z3str)
   }
 }

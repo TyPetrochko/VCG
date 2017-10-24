@@ -1,7 +1,6 @@
 program simple
-  post x = 1
+  post x = 1 || x = 5
 is
-  x := 0;
-  x := x+1;
+  x := 1;
 end
 

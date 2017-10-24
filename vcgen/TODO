@@ -1,10 +1,24 @@
 TODO:
 
-(0) Install z3
-(1) Get all array vars used in an Assertion
-(2) Get all non-array vars used in an Assertion
-(3) Remove all Forall(...) and replace Exists(...) with negation
-(4) Print out z3-string
+!!! Sometimes in Fib, gc4 gets converted from an ArrayVar to Var
+
+(0) Need a better way to track which vars are arrays...
+    - Add a Array ArithExp to VCGen
+    - Modify GuardedConditions.AssumEquals to specify an ArithExp and ArithExp,
+      allowing Array-Array and Var-Var
+    - Fix all occurrences of ^
+(1) Pass in precondition as starting weakest pre-condition
+(2) AND weakest precondition with post-condition
+
+
+****
+
+(x) Install z3
+(x) Get all array vars used in an Assertion
+(x) Get all non-array vars used in an Assertion
+(x) Remove all Forall(...) and replace Exists(...) with negation
+(5) Change naming convention so # -> _ and $ -> __
+(6) Print out z3-string
 
 
 ****

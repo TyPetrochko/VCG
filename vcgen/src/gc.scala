@@ -20,11 +20,15 @@ object GuardedCommands {
   private var count = 0
   def getFreshVar : String = {
     count = count + 1
-    "#"+count
+    "_gc"+count
   }
 
-  def gcAssumeEquals(x: String, e: VCGen.ArithExp) : GCAssume = {
-    GCAssume(GCBoolExp(VCGen.BCmp(VCGen.Var(x), "=", e)))
+  def gcAssumeEquals(x: VCGen.Var, e: VCGen.ArithExp) : GCAssume = {
+    GCAssume(GCBoolExp(VCGen.BCmp(x, "=", e)))
+  }
+  
+  def gcAssumeEquals(a: VCGen.ArrayVar, e: VCGen.ArithExp) : GCAssume = {
+    GCAssume(GCBoolExp(VCGen.BCmp(a, "=", e)))
   }
 
   def getVarsInStm(stm: VCGen.Statement) : Set[String] = {
@@ -64,6 +68,7 @@ object GuardedCommands {
     e match {
       case VCGen.Num(v) => VCGen.Num(v)
       case VCGen.Var(s) => VCGen.Var(if (s == x) r else s)
+      case VCGen.ArrayVar(s) => VCGen.Var(if (s == x) r else s)
       case VCGen.Read(s, ind) => 
         VCGen.Read(if (s == x) r else s, replace(ind, r, x))
       case VCGen.ArrWrite(s, ind, v) => 
@@ -88,20 +93,23 @@ object GuardedCommands {
 
   def guard(s: VCGen.Statement) : GC = {
     s match {
+      // Non-arrays only!
       case VCGen.Assign(x, e) => {
         val tmp = getFreshVar
         join(
-            gcAssumeEquals(tmp, VCGen.Var(x)),
+            gcAssumeEquals(VCGen.Var(tmp), VCGen.Var(x)),
             GCHavoc(x),
-            gcAssumeEquals(x, replace(e, tmp, x))
+            gcAssumeEquals(VCGen.Var(x), replace(e, tmp, x))
           )
       }
       case VCGen.Write(x, ind, v) => {
         val tmp = getFreshVar
         join(
-            gcAssumeEquals(tmp, VCGen.Var(x)),
+            gcAssumeEquals(VCGen.ArrayVar(tmp), VCGen.ArrayVar(x)),
             GCHavoc(x),
-            gcAssumeEquals(x, VCGen.ArrWrite(tmp, replace(ind, tmp, x), replace(v, tmp, x)))
+            gcAssumeEquals(
+              VCGen.ArrayVar(x), 
+              VCGen.ArrWrite(tmp, replace(ind, tmp, x), replace(v, tmp, x)))
           )
       }
       case VCGen.ParAssign(x1, x2, v1, v2) => {
@@ -120,7 +128,7 @@ object GuardedCommands {
       }
       case VCGen.While(cond, invs, body) => {
         val varsUsed = getVarsInBlock(body).toList
-        val havocStms = join(varsUsed.map(s => GCHavoc(s)): _*) // Splat operator! Wooo!
+        val havocStms = join(varsUsed.map(s => GCHavoc(s)): _*) // Splat
         val inv = invs match {
           case List() => getTrueyAssn
           case List(i) => i

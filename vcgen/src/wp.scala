@@ -9,7 +9,7 @@ object WeakestPrecondition {
   private var count = 0
   def getFreshVar : String = {
     count = count + 1
-    "$"+count
+    "_wp"+count
   }
 
   // Helper function for main replace
