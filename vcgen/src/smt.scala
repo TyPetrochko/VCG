@@ -126,7 +126,12 @@ object Smt {
       case VCGen.AssnCmp((a1, str, a2)) => {
         val lhs = buildSmtClause(a1)
         val rhs = buildSmtClause(a2)
-        s"($str $lhs $rhs)"
+        str match {
+          // No inequality comparator
+          case "!=" => s"(not (= $lhs $rhs))"
+          case _ => s"($str $lhs $rhs)"
+        }
+        
       }
       case VCGen.AssnNot(a) => {
         val inner = buildSmtClause(a)

@@ -1,0 +1,10 @@
+program mult
+  pre x <= n
+  post x = n
+is
+  while x < n
+    inv x <= n
+  do
+    x := x + 1;
+  end
+end

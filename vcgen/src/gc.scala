@@ -23,6 +23,10 @@ object GuardedCommands {
     "_gc"+count
   }
 
+  def getDummyGC: GC= {
+    GCAssertion(VCGen.AssnCmp((VCGen.Num(1), "=", VCGen.Num(1))))
+  }
+
   def gcAssumeEquals(x: VCGen.Var, e: VCGen.ArithExp) : GCAssume = {
     GCAssume(GCBoolExp(VCGen.BCmp(x, "=", e)))
   }
@@ -68,7 +72,7 @@ object GuardedCommands {
     e match {
       case VCGen.Num(v) => VCGen.Num(v)
       case VCGen.Var(s) => VCGen.Var(if (s == x) r else s)
-      case VCGen.ArrayVar(s) => VCGen.Var(if (s == x) r else s)
+      case VCGen.ArrayVar(s) => VCGen.ArrayVar(if (s == x) r else s)
       case VCGen.Read(s, ind) => 
         VCGen.Read(if (s == x) r else s, replace(ind, r, x))
       case VCGen.ArrWrite(s, ind, v) => 
@@ -88,7 +92,10 @@ object GuardedCommands {
   }
 
   def guard(b: VCGen.Block) : GC = {
-    join(b.map((s) => guard(s)): _*) // Scala's _* "Splat" operator - cool!
+    b match {
+      case Nil => getDummyGC
+      case _ => join(b.map((s) => guard(s)): _*) // Scala's _* "Splat" operator - cool!
+    }
   }
 
   def guard(s: VCGen.Statement) : GC = {
@@ -128,26 +135,45 @@ object GuardedCommands {
       }
       case VCGen.While(cond, invs, body) => {
         val varsUsed = getVarsInBlock(body).toList
-        val havocStms = join(varsUsed.map(s => GCHavoc(s)): _*) // Splat
+        val havocStms = varsUsed match {
+          case List() => GCHavoc(getFreshVar) // Plug hole to prevent explosion
+          case _ => join(varsUsed.map(s => GCHavoc(s)): _*) // Splat
+        }
         val inv = invs match {
           case List() => getTrueyAssn
           case List(i) => i
           case other => mergeInvariants(other)
         }
-        join(
-            GCAssertion(inv),
-            havocStms, 
-            GCAssume(GCInvariant(inv)),
-            GCBranch(
-                join(
-                    GCAssume(GCBoolExp(cond)),
-                    guard(body),
-                    GCAssertion(inv),
-                    GCAssume(GCBoolExp(getFalsey))
-                  ),
-                GCAssume(GCBoolExp(VCGen.BNot(cond)))
-              )
-          )
+        body match {
+          case List() => join(
+             GCAssertion(inv),
+             havocStms, 
+             GCAssume(GCInvariant(inv)),
+             GCBranch(
+                 join(
+                     GCAssume(GCBoolExp(cond)),
+                     GCAssertion(inv),
+                     GCAssume(GCBoolExp(getFalsey))
+                   ),
+                 GCAssume(GCBoolExp(VCGen.BNot(cond)))
+               )
+           ) 
+          case _ => join(
+             GCAssertion(inv),
+             havocStms, 
+             GCAssume(GCInvariant(inv)),
+             GCBranch(
+                 join(
+                     GCAssume(GCBoolExp(cond)),
+                     guard(body),
+                     GCAssertion(inv),
+                     GCAssume(GCBoolExp(getFalsey))
+                   ),
+                 GCAssume(GCBoolExp(VCGen.BNot(cond)))
+               )
+           )
+        }
+        
       }
       case _ => null
     }

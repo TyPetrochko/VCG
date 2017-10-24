@@ -1,8 +1,11 @@
 import scala.util.parsing.combinator._
-import java.io.FileReader
+import java.io._
+import sys.process._
 
 
 object VCGen {
+  /* Set false for quiet, true for verbose */
+  var verbose = false
 
   /* Arithmetic expressions. */
   trait ArithExp
@@ -181,6 +184,9 @@ object VCGen {
   }
 
   def main(args: Array[String]): Unit = {
+    if(args.contains("-v"))
+      verbose = true
+    
     val reader = new FileReader(args(0))
     import ImpParser._;
     val result = parseAll(prog, reader)
@@ -202,18 +208,32 @@ object VCGen {
     }
     val wp = WeakestPrecondition.wp(gc, GuardedCommands.getTrueyAssn)
     val z3str = Smt.getSmtString(wp)
-    
-    println("** AST: **")
-    println(Util.prettyPrint(result))
-    println("** Guarded Commands **")
-    println(Util.printGC(gc))
-    println("")
-    // Start with program precondition as WP
-    println("** Weakest Precondition (with post condition: 1=1) **")
-    println(Util.prettyPrint(wp))
-    println("")
-    println("** Z3 String **")
-    // WP should imply postcondition
-    println(z3str)
+
+
+    val tmp = Seq("mktemp").!!.trim
+    new PrintWriter(tmp) { write(z3str); close }
+    val out = Seq("./z3", "-smt2", tmp).!!.trim
+
+    if(verbose) {
+      println("** AST: **")
+      println(Util.prettyPrint(result))
+      println("** Guarded Commands **")
+      println(Util.printGC(gc))
+      println("")
+      // Start with program precondition as WP
+      println("** Weakest Precondition (with post condition: 1=1) **")
+      println(Util.prettyPrint(wp))
+      println("")
+      println("** Z3 String **")
+      // WP should imply postcondition
+      println(z3str)
+    }
+
+    if(out == "sat")
+      println("Invalid")
+    else if(out =="unsat")
+      println("Valid")
+    else
+      println("unknown z3 output: "+out)
   }
 }

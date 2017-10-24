@@ -17,7 +17,7 @@ object WeakestPrecondition {
     if(s == x) r else s
   }
 
-  // Another helper just for VCGen.asswertion
+  // Another helper just for VCGen.assertion
   def replace(a: VCGen.Assertion, r: String, x: String) : VCGen.Assertion = {
     a match {
       case VCGen.AssnCmp((e1, s, e2)) => VCGen.AssnCmp((

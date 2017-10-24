@@ -1,5 +1,5 @@
 program order
-  post x < y
+  post x <= y
 is
   if x > y then
     x, y := y, x;

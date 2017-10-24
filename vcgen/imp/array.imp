@@ -1,0 +1,7 @@
+program arr is
+  fib[1] := 1;
+  fib[2] := 1;
+
+  fib[3] := fib[1];
+end
+

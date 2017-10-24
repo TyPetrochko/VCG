@@ -2,6 +2,7 @@ TODO:
 
 !!! Sometimes in Fib, gc4 gets converted from an ArrayVar to Var
 !!! Needs to work on empty!
+!!! Empty while loop breaks!
 
 (0) Remove the dequantify nonsense
   - Remove getVars/getArrays from touching quantifier lists
