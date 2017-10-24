@@ -1,6 +1,4 @@
-Tyler Petrochko
-CPSC 454 VCG Project
-Acknowledgement: This project was originally created by Ruzica and Quentin.
+Tyler Petrochko  | CPSC 454 VCG Project
 
 My implementation can be built with the command "make". My benchmarks are
 included in the "benchmarks/" directory.
@@ -25,5 +23,5 @@ the command used to invoke z3, edit line 9 of vcgen.scala:
 to a more appropriate value.
 
 
-
+Acknowledgement: This project was originally created by Ruzica and Quentin.
 
