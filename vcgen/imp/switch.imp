@@ -1,4 +1,7 @@
-program switch is
+program switch
+  post forall x1 y1, (x1=x && y1=y) ==> (x1=50 && y1=2)
+  post exists x2, x2=5
+is
   x, y := 5, 10;
   x, y := y*x, y/x;
 end

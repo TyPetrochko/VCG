@@ -132,9 +132,15 @@ object VCGen {
       }
 
     // My parsers:
-    def assnatom : Parser[Assertion] =
-      "(" ~> assnexp <~ ")" | comp ^^ { AssnCmp(_) } |
-      "!" ~> assnatom ^^ { AssnNot(_) }
+    def assnatom : Parser[Assertion] = "(" ~> assnexp <~ ")" |
+        comp ^^ { AssnCmp(_) } |
+        "!" ~> assnatom ^^ { AssnNot(_) } |
+        ("forall" ~> rep(pvar) <~ ",") ~ assnexp ^^ {
+          case list ~ a => { AssnForall(list, a) }
+        } |
+        ("exists" ~> rep(pvar) <~ ",") ~ assnexp ^^ {
+          case list ~ a => { AssnExists(list, a) }
+        }
     def assnconj : Parser[Assertion] =
       assnatom ~ rep("&&" ~> assnatom) ^^ {
         case left ~ list => (left /: list) { AssnConj(_, _) }
@@ -148,15 +154,16 @@ object VCGen {
       assndisj ~ rep("==>" ~> assndisj) ^^ {
         case left ~ list => (left /: list) { AssnImpl(_, _) }
       }
-    def assnexp : Parser[Assertion] = assndisj
     def assnforall : Parser[Assertion] =
-      ("forall" ~> rep(pvar) <~ ",") ~ assnatom ^^ {
+      ("forall" ~> rep(pvar) <~ ",") ~ assndisj ^^ {
         case list ~ a => { AssnForall(list, a) }
       }
     def assnexists : Parser[Assertion] =
-      ("exists" ~> rep(pvar) <~ ",") ~ assnatom ^^ {
+      ("exists" ~> rep(pvar) <~ ",") ~ assnforall ^^ {
         case list ~ a => { AssnExists(list, a) }
       }
+    def assnexp : Parser[Assertion] = assnimpl
+    
     /* Parsing for Program. */
     def prog   : Parser[Program] =
       (("program" ~> pvar) ~ rep("pre" ~> assnexp) 
@@ -176,21 +183,37 @@ object VCGen {
   def main(args: Array[String]): Unit = {
     val reader = new FileReader(args(0))
     import ImpParser._;
-    println("** AST: **")
     val result = parseAll(prog, reader)
+    val progname = result.get._1
+    val precondition = normalizeInvariants(result.get._2)
+    val postcondition = normalizeInvariants(result.get._3)
+    val body = result.get._4
+    
+    val gc = body match {
+      case List() => Util.mergeGC(
+          GuardedCommands.GCAssume(GuardedCommands.GCInvariant(precondition)),
+          GuardedCommands.GCAssertion(postcondition)
+        )
+      case _ => Util.mergeGC(
+          GuardedCommands.GCAssume(GuardedCommands.GCInvariant(precondition)),
+          GuardedCommands.guard(body),
+          GuardedCommands.GCAssertion(postcondition)
+        )
+    }
+    val wp = WeakestPrecondition.wp(gc, GuardedCommands.getTrueyAssn)
+    val z3str = Smt.getSmtString(wp)
+    
+    println("** AST: **")
     println(Util.prettyPrint(result))
-    val gc = GuardedCommands.guard(result.get._4)
     println("** Guarded Commands **")
     println(Util.printGC(gc))
     println("")
     // Start with program precondition as WP
-    val wp = WeakestPrecondition.wp(gc, normalizeInvariants(result.get._2))
     println("** Weakest Precondition (with post condition: 1=1) **")
     println(Util.prettyPrint(wp))
     println("")
     println("** Z3 String **")
     // WP should imply postcondition
-    val z3str = Smt.getSmtString(AssnImpl(wp, normalizeInvariants(result.get._3)))
     println(z3str)
   }
 }

@@ -1,5 +1,5 @@
 program simple
-  post x = 1 || x = 5
+  post x = 3
 is
   x := 1;
 end

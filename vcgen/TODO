@@ -1,6 +1,15 @@
 TODO:
 
 !!! Sometimes in Fib, gc4 gets converted from an ArrayVar to Var
+!!! Needs to work on empty!
+
+(0) Remove the dequantify nonsense
+  - Remove getVars/getArrays from touching quantifier lists
+(1) Needs to work on empty
+(2) Fix post quantifiers
+(3) Add (set-option :produce-models true) to beginning
+
+****
 
 (0) Need a better way to track which vars are arrays...
     - Add a Array ArithExp to VCGen

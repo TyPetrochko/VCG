@@ -4,6 +4,26 @@
  * General helper functions
  */
 object Util {
+  
+  def mergeGC(gc1: GuardedCommands.GC, gc2: GuardedCommands.GC) = {
+    rewrapGc(unwrapGc(gc1)++unwrapGc(gc2))
+  }
+
+  def mergeGC(gc1: GuardedCommands.GC, gc2: GuardedCommands.GC, gc3: GuardedCommands.GC) = {
+    rewrapGc(unwrapGc(gc1)++unwrapGc(gc2)++unwrapGc(gc3))
+  }
+
+  def unwrapGc(gc: GuardedCommands.GC) : List[GuardedCommands.GC] = {
+    gc match {
+      case GuardedCommands.GCSeq(c1, c2) => unwrapGc(c1)++unwrapGc(c2)
+      case _ => List(gc)
+    }
+  }
+
+  def rewrapGc(gcs : List[GuardedCommands.GC]) : GuardedCommands.GC = {
+    gcs.reduceLeft((l, r) => GuardedCommands.GCSeq(l,r))
+  }
+
   def printAstHelper(prog: VCGen.Program): String = {
     var toReturn = "Name: "+prog._1+"\n"
     toReturn += "Preconditions: "+prog._2+"\n"

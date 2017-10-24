@@ -14,6 +14,7 @@ object Smt {
       case VCGen.Add(l, r) => getArrays(l)++getArrays(r)
       case VCGen.Sub(l, r) => getArrays(l)++getArrays(r)
       case VCGen.Mul(l, r) => getArrays(l)++getArrays(r)
+      case VCGen.Div(l, r) => getArrays(l)++getArrays(r)
       case VCGen.Mod(l, r) => getArrays(l)++getArrays(r)
       case VCGen.Parens(a) => getArrays(a)
       case VCGen.ArrWrite(name, i, v) => Set(name)++getArrays(i)++getArrays(v)
@@ -44,6 +45,7 @@ object Smt {
       case VCGen.Add(l, r) => getVars(l)++getVars(r)
       case VCGen.Sub(l, r) => getVars(l)++getVars(r)
       case VCGen.Mul(l, r) => getVars(l)++getVars(r)
+      case VCGen.Div(l, r) => getVars(l)++getVars(r)
       case VCGen.Mod(l, r) => getVars(l)++getVars(r)
       case VCGen.Parens(a) => getVars(a)
       case VCGen.ArrWrite(name, i, v) => getVars(i)++getVars(v)
@@ -57,8 +59,8 @@ object Smt {
       case VCGen.AssnDisj(l, r) => getVars(l)++getVars(r)
       case VCGen.AssnConj(l, r) => getVars(l)++getVars(r)
       case VCGen.AssnImpl(l, r) => getVars(l)++getVars(r)
-      case VCGen.AssnForall(x, a) => x.toSet++getVars(a)
-      case VCGen.AssnExists(x, a) => x.toSet++getVars(a)
+      case VCGen.AssnForall(x, a) => getVars(a)--x.toSet
+      case VCGen.AssnExists(x, a) => getVars(a)--x.toSet
       case VCGen.AssnParens(a) => getVars(a)
     }
   }
@@ -146,11 +148,16 @@ object Smt {
         s"(implies $lhs $rhs)"
       }
       case VCGen.AssnParens(a) => buildSmtClause(a)
-      // Raise Exceptions!
-      case VCGen.AssnForall(x, assn) =>
-        throw new Exception("Z3 does not take Forall: "+assn) 
-      case VCGen.AssnExists(x, assn) =>
-        throw new Exception("Z3 does not take Exists: "+assn)
+      case VCGen.AssnForall(x, assn) => {
+        val body = buildSmtClause(assn)
+        val decs = x.foldLeft(" ")((total, declvar) => total+s"($declvar Int) ")
+        s"(forall ($decs) $body)"
+      }
+      case VCGen.AssnExists(x, assn) => {
+        val body = buildSmtClause(assn)
+        val decs = x.foldLeft(" ")((total, declvar) => total+s"($declvar Int) ")
+        s"(exists ($decs) $body)"
+      }
     }
   }
 
@@ -172,7 +179,7 @@ object Smt {
     str += varsUsed.toList.foldLeft("")((str, x) => s"$str(declare-const $x Int)\n")
     str += arrsUsed.toList.foldLeft("")((str, a) => s"$str(declare-const $a (Array Int Int))\n")
 
-    val smtClause = buildSmtClause(VCGen.AssnNot(dequantify(assn)))
+    val smtClause = buildSmtClause(VCGen.AssnNot(assn))
 
     str += s"(assert $smtClause)\n"
     str += s"(check-sat)"

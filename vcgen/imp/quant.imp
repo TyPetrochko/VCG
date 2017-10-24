@@ -1,0 +1,4 @@
+program switch
+  pre exists x2, x2=5 && x2<5
+is
+end
