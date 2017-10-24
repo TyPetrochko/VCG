@@ -1,7 +1,5 @@
 Tyler Petrochko
-
 CPSC 454 VCG Project
-
 Acknowledgement: This project was originally created by Ruzica and Quentin.
 
 My implementation can be built with the command "make". My benchmarks are
