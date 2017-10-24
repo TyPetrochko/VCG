@@ -1,4 +1,4 @@
-program fib
+program fiba
   pre N > 3
   post forall j, (j >= 3 && j < N) ==> fib[j] = fib[j-1]+fib[j-2]
 is

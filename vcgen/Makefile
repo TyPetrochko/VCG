@@ -4,7 +4,7 @@ WP = src/wp.scala
 SMT = src/smt.scala
 UTIL = src/util.scala
 
-all: compile run
+all: compile
 
 compile:
 	-[ -e classes ] || mkdir classes

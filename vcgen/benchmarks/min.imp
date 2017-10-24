@@ -1,0 +1,29 @@
+program min
+  pre N > 0
+  post forall j, (j >= 0 && j < N) ==> min <= a[j]
+is
+  i := 0;
+  min := a[0];
+
+  if(a[1] < min)
+  then
+    min := a[1];
+  end
+  
+  if(a[2] < min)
+  then
+    min := a[2];
+  end
+
+  while i < N
+    inv forall j, (j >= 0 && j < i) ==> min <= a[j]
+  do
+    if a[i] < min
+    then
+      min := a[i];
+    end
+    i := i+1;
+  end
+end
+
+

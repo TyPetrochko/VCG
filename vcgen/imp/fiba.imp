@@ -1,0 +1,19 @@
+program fiba
+  pre N > 3
+  post forall j, (j >= 3 && j < N) ==> fib[j] = fib[j-1]+fib[j-2]
+is
+  fib[1] := 1;
+  fib[2] := 1;
+
+  i := 3;
+
+  while i < N 
+      inv i >= 3
+      inv i <= N
+      inv forall j, (j >= 3 && j < i) ==> fib[j] = fib[j-1]+fib[j-2]
+  do
+      fib[i] := fib[i - 1] + fib[i - 2];
+      i := i+1;
+  end
+end
+

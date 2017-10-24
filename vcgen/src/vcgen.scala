@@ -6,6 +6,7 @@ import sys.process._
 object VCGen {
   /* Set false for quiet, true for verbose */
   var verbose = false
+  var z3dst = "z3"
 
   /* Arithmetic expressions. */
   trait ArithExp
@@ -212,7 +213,7 @@ object VCGen {
 
     val tmp = Seq("mktemp").!!.trim
     new PrintWriter(tmp) { write(z3str); close }
-    val out = Seq("./z3", "-smt2", tmp).!!.trim
+    val out = Seq(z3dst, "-smt2", tmp).!!.trim
 
     if(verbose) {
       println("** AST: **")
